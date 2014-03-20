@@ -1,3 +1,4 @@
+package dk.itu.mario.level;
 //package dk.itu.mario.level;
 //
 //import java.awt.Color;
