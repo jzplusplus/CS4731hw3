@@ -50,122 +50,56 @@ public class MyLevel extends Level{
 //		System.out.println("Aimless jumps" + playerMetrics.aimlessJumps);
 		// hardcoded for now
 		int model = PRECISION;
-		creat(seed, difficulty, type, model);
-		System.out.println(evaluate(model));
-	}
-	
-	//new methods
-	public double evaluate(int model) {
-		switch (model) {
-			case PRECISION:
-				return evaluatePrecision();
-			default:
-				return 0;
-		}
-	}
-	
-	public double evaluatePrecision() {
-		double difficulty = 0;
-		for (LevelSection section : levelSections) {
-			difficulty += section.fitness;
-		}
-		return Math.abs(1 - difficulty / levelSections.size());
-	}
-	
-	private int buildAdvancedJump(int xo, int maxLength) {
-		gaps++;
-		//jl: jump length
-		//js: the number of blocks that are available at either side for free
-		int js = random.nextInt(2) + 2;
-		int jl = random.nextInt(3) + 2;
-		int length = js * 2 + jl;
-	
-		boolean hasStairs = random.nextInt(3) == 0;
-	
-		int floor = height - 1 - random.nextInt(4);
-		int vDiff = 0;
-		//run from the start x position, for the whole length
-		for (int x = xo; x < xo + length; x++)
+		
+		random = new Random(seed);
+		
+		int totalLength = 0;
+		while(totalLength < width - 64)
 		{
-			if (x == xo + js) {
-				vDiff = random.nextInt(10) - 4;
-				floor = floor + vDiff;
-				if (floor < 0) {
-					floor = 0;
-				} else if (floor > height - 1) {
-					floor = height - 1;
-				}
-			}
-			if (x < xo + js || x > xo + length - js - 1)
-			{
-				//run for all y's since we need to paint blocks upward
-				for (int y = 0; y < height; y++)
-				{	//paint ground up until the floor
-					if (y >= floor)
-					{
-						setBlock(x, y, GROUND);
-					}
-					//if it is above ground, start making stairs of rocks
-					else if (hasStairs)
-					{	//LEFT SIDE
-						if (x < xo + js)
-						{ //we need to max it out and level because it wont
-							//paint ground correctly unless two bricks are side by side
-							if (y >= floor - (x - xo) + 1)
-							{
-								setBlock(x, y, ROCK);
-							}
-						}
-						else
-						{ //RIGHT SIDE
-							if (y >= floor - ((xo + length) - x) + 2)
-							{
-								setBlock(x, y, ROCK);
-							}
-						}
-					}
-				}
-			}
+			LevelSection ls = new AdvancedJumpSection();
+			levelSections.add(ls);
+			totalLength += ls.getLength();
 		}
 		
-		LevelSection section = new LevelSection();
-		section.start = xo;
-		section.end = xo + length;
-		section.fitness = vDiff + jl - js;
-		levelSections.add(section);
-		return length;
+		creat(seed, difficulty, type);
+//		System.out.println(evaluate(model));
 	}
-	//end new methods
+	
+//	//new methods
+//	public double evaluate(int model) {
+//		switch (model) {
+//			case PRECISION:
+//				return evaluatePrecision();
+//			default:
+//				return 0;
+//		}
+//	}
+//	
+//	public double evaluatePrecision() {
+//		double difficulty = 0;
+//		for (LevelSection section : levelSections) {
+//			difficulty += section.fitness;
+//		}
+//		return Math.abs(1 - difficulty / levelSections.size());
+//	}
+//	//end new methods
 
-	public void creat(long seed, int difficulty, int type, int model)
+	public void creat(long seed, int difficulty, int type)
 	{
 		this.type = type;
 		this.difficulty = difficulty;
 
 		lastSeed = seed;
-		random = new Random(seed);
 
 		//create the start location
 		int length = 0;
 		length += buildStraight(0, width, true);
 
 		//create all of the medium sections based on the provided model
-		switch (model) {
-			case PRECISION:
-				while (length < width - 64) {
-					length += buildAdvancedJump(length, width-length);
-				}
-				break;
-			default:
-				while (length < width - 64) {
-					length += buildStraight(length, width-length, false);
-					length += buildStraight(length, width-length, false);
-					length += buildHillStraight(length, width-length);
-					length += buildJump(length, width-length);
-					length += buildTubes(length, width-length);
-					length += buildCannons(length, width-length);
-				}
+		while (length < width - 64) {
+			length += levelSections.remove(0).build(length, width-length);
 		}
+
 		//create all of the medium sections
 //		while (length < width - 64)
 //		{
@@ -783,11 +717,105 @@ public class MyLevel extends Level{
 //		public int end;
 //	}
 	
-	public class LevelSection {
-		public int start;
-		public int end;
-		public int fitness;
+	public abstract class LevelSection {
+		public abstract int getLength();
+		public abstract double fitness(int model);
+		public abstract int build(int xo, int maxLength);
 	}
+	
+	public class AdvancedJumpSection extends LevelSection{
+		
+		//jl: jump length
+		//js: the number of blocks that are available at either side for free
+		//vDiff: vertical difference across the gap
+		private int vDiff;
+		private int jl;
+		private int js;
+		
+		private int length;
+		
+		public AdvancedJumpSection()
+		{
+			js = random.nextInt(2) + 2;
+			jl = random.nextInt(3) + 2;
+			vDiff = random.nextInt(10) - 4;
+			
+			length = js * 2 + jl;
+		}
+		
+		public int getLength()
+		{
+			return length;
+		}
+		
+		public double fitness(int model)
+		{
+			switch(model)
+			{
+			case PRECISION:
+				return vDiff + jl - js;
+				
+			default:
+				
+				break;
+			}
+			return 0.0;
+		}
+		
+		public int build(int xo, int maxLength) {
+			gaps++;
+		
+			boolean hasStairs = random.nextInt(3) == 0;
+		
+			int floor = height - 1 - random.nextInt(4);
+
+			//run from the start x position, for the whole length
+			for (int x = xo; x < xo + length; x++)
+			{
+				if (x == xo + js) {
+					floor = floor + vDiff;
+					if (floor < 0) {
+						floor = 0;
+					} else if (floor > height - 1) {
+						floor = height - 1;
+					}
+				}
+				if (x < xo + js || x > xo + length - js - 1)
+				{
+					//run for all y's since we need to paint blocks upward
+					for (int y = 0; y < height; y++)
+					{	//paint ground up until the floor
+						if (y >= floor)
+						{
+							setBlock(x, y, GROUND);
+						}
+						//if it is above ground, start making stairs of rocks
+						else if (hasStairs)
+						{	//LEFT SIDE
+							if (x < xo + js)
+							{ //we need to max it out and level because it wont
+								//paint ground correctly unless two bricks are side by side
+								if (y >= floor - (x - xo) + 1)
+								{
+									setBlock(x, y, ROCK);
+								}
+							}
+							else
+							{ //RIGHT SIDE
+								if (y >= floor - ((xo + length) - x) + 2)
+								{
+									setBlock(x, y, ROCK);
+								}
+							}
+						}
+					}
+				}
+			}
+			
+			return length;
+		}
+	}
+	
 	
 //	public class PrecisionSection extends LevelSection {
 //		public int difficulty;
