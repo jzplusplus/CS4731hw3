@@ -1,5 +1,6 @@
 package dk.itu.mario.level;
 
+import java.util.ArrayList;
 import java.util.Random;
 
 import dk.itu.mario.MarioInterface.Constraints;
@@ -34,8 +35,7 @@ public class MyLevel extends Level{
 	public static final int COLLECTOR = 2;
 	public static final int KILLER = 3;
 	public static final int HARDCORE = 4;
-	public static final int JUMP_DIST = 0;
-	public static final int RUN_JUMP_DIST = 0;
+	private ArrayList<LevelSection> levelSections = new ArrayList<LevelSection>();
 	//end new vars
 
 	public MyLevel(int width, int height)
@@ -51,24 +51,16 @@ public class MyLevel extends Level{
 		// hardcoded for now
 		int model = PRECISION;
 		creat(seed, difficulty, type, model);
+		System.out.println(evaluate());
 	}
 	
 	//new methods
-	public int evaluate(LevelSection section, int model) {
-		switch (model) {
-			case 1:
-				return evaluatePrecision(section, model);
-			default:
-				return evaluatePrecision(section, model);
-		}
-	}
-	
-	public int evaluatePrecision(LevelSection section, int model) {
+	public int evaluate() {
 		int fitness = 0;
-		for (int i = section.start; i <= section.end; i++) {
-			
+		for (LevelSection section : levelSections) {
+			fitness += section.fitness;
 		}
-		return 0;
+		return fitness;
 	}
 	
 	private int buildAdvancedJump(int xo, int maxLength) {
@@ -119,7 +111,12 @@ public class MyLevel extends Level{
 				}
 			}
 		}
-	
+		
+		LevelSection section = new LevelSection();
+		section.start = xo;
+		section.end = xo + length;
+		section.fitness = 1;
+		levelSections.add(section);
 		return length;
 	}
 	//end new methods
@@ -755,17 +752,23 @@ public class MyLevel extends Level{
 	}
 
 	//new classes
-	public abstract class LevelSection {
-		public int id;
-		
-		public int enemies;
-		public int requiredJumps;
-		public int coins;
-		public int difficulty;
-		public int runnability;
-		public int powerups;
-		
-		public int length;
+//	public abstract class LevelSection {
+//		public int id;
+//		
+//		public int enemies;
+//		public int requiredJumps;
+//		public int coins;
+//		public int difficulty;
+//		public int runnability;
+//		public int powerups;
+//		
+//		public int length;
+//		public int start;
+//		public int end;
+//	}
+	
+	public class LevelSection {
+		public int fitness;
 		public int start;
 		public int end;
 	}
