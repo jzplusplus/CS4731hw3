@@ -1,6 +1,8 @@
 package dk.itu.mario.level;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.Random;
 
 import dk.itu.mario.MarioInterface.Constraints;
@@ -35,7 +37,8 @@ public class MyLevel extends Level{
 	public static final int COLLECTOR = 2;
 	public static final int KILLER = 3;
 	public static final int HARDCORE = 4;
-	private ArrayList<LevelSection> levelSections = new ArrayList<LevelSection>();
+	private LevelSectionList levelSections;
+	private int model;
 	//end new vars
 
 	public MyLevel(int width, int height)
@@ -49,17 +52,11 @@ public class MyLevel extends Level{
 		this(width, height);
 //		System.out.println("Aimless jumps" + playerMetrics.aimlessJumps);
 		// hardcoded for now
-		int model = PRECISION;
+		model = PRECISION;
 		
 		random = new Random(seed);
 		
-		int totalLength = 0;
-		while(totalLength < width - 64)
-		{
-			LevelSection ls = new AdvancedJumpSection();
-			levelSections.add(ls);
-			totalLength += ls.getLength();
-		}
+		levelSections = generateSections(width);
 		
 		creat(seed, difficulty, type);
 //		System.out.println(evaluate(model));
@@ -94,10 +91,10 @@ public class MyLevel extends Level{
 		//create the start location
 		int length = 0;
 		length += buildStraight(0, width, true);
-
-		//create all of the medium sections based on the provided model
-		while (length < width - 64) {
-			length += levelSections.remove(0).build(length, width-length);
+		
+		for(LevelSection ls : levelSections)
+		{
+			length += ls.build(length, width - length);
 		}
 
 		//create all of the medium sections
@@ -717,9 +714,129 @@ public class MyLevel extends Level{
 //		public int end;
 //	}
 	
+	public LevelSectionList generateSections(int width)
+	{
+		final int POPULATION_SIZE = 50;
+		final int GENERATIONS = 50;
+		final int NUMBER_TO_KEEP = 10;
+		
+		//Initial population
+		ArrayList<LevelSectionList> population = new ArrayList<LevelSectionList>();
+		
+		for(int i=0; i < POPULATION_SIZE; i++)
+		{
+			LevelSectionList level = new LevelSectionList();
+			while(level.length < width - 64)
+			{
+				LevelSection ls = randomSection();
+				level.add(ls);
+			}
+			population.add(level);
+		}
+		
+		for(int i=0; i < GENERATIONS; i++)
+		{
+			//Selection
+			Collections.sort(population);
+			System.out.println("Best level fitness = " + population.get(0).fitness);
+			
+			population.subList(NUMBER_TO_KEEP, POPULATION_SIZE).clear();
+			
+			//Mutation
+			for(int j=0; j < POPULATION_SIZE - NUMBER_TO_KEEP; j++)
+			{
+				LevelSectionList parentA = population.get(random.nextInt(NUMBER_TO_KEEP));
+				LevelSectionList parentB = population.get(random.nextInt(NUMBER_TO_KEEP));
+				
+				LevelSectionList level = new LevelSectionList();
+				int k = 0;
+				while(level.length < width - 64)
+				{
+					LevelSection ls;
+					
+					if(k < parentA.size() && k < parentB.size())
+					{
+						ls = random.nextBoolean() ? parentA.get(k) : parentB.get(k);
+					}
+					else if(k < parentA.size())
+					{
+						ls = parentA.get(k);
+					}
+					else if(k < parentB.size())
+					{
+						ls = parentB.get(k);
+					}
+					else
+					{
+						ls = randomSection();
+					}
+					
+					level.add(ls);
+					k++;
+				}
+				
+				population.add(level);
+			}
+		}
+		
+		Collections.sort(population);
+		
+		return population.get(0);
+	}
+	
+	public LevelSection randomSection()
+	{
+		//TODO add more sections options
+		return new AdvancedJumpSection();
+	}
+	
+	public class LevelSectionList implements Comparable<LevelSectionList>, Iterable<LevelSection>{
+		public int fitness;
+		public int length;
+		
+		ArrayList<LevelSection> sections;
+		
+		public LevelSectionList()
+		{
+			sections = new ArrayList<LevelSection>();
+			fitness = 0;
+			length = 0;
+		}
+		
+		public void add(LevelSection ls)
+		{
+			sections.add(ls);
+			length += ls.getLength();
+			fitness += ls.fitness();
+		}
+		
+		public LevelSection get(int i)
+		{
+			return sections.get(i);
+		}
+		
+		public int size()
+		{
+			return sections.size();
+		}
+
+		@Override
+		public int compareTo(LevelSectionList o) {
+			final double TARGET_DIFFICULTY = 100;
+			if(Math.abs(o.fitness - TARGET_DIFFICULTY) < Math.abs(this.fitness - TARGET_DIFFICULTY)) return 1;
+			else if(Math.abs(this.fitness - TARGET_DIFFICULTY) < Math.abs(o.fitness - TARGET_DIFFICULTY)) return -1;
+			else return 0;
+		}
+
+		@Override
+		public Iterator<LevelSection> iterator() {
+			return sections.iterator();
+		}
+	}
+	
 	public abstract class LevelSection {
 		public abstract int getLength();
-		public abstract double fitness(int model);
+		public abstract double fitness();
 		public abstract int build(int xo, int maxLength);
 	}
 	
@@ -728,17 +845,27 @@ public class MyLevel extends Level{
 		//jl: jump length
 		//js: the number of blocks that are available at either side for free
 		//vDiff: vertical difference across the gap
+		//hasStairs: a block in front of the jump makes it more difficult
 		private int vDiff;
 		private int jl;
 		private int js;
+		private boolean hasStairs;
 		
 		private int length;
 		
 		public AdvancedJumpSection()
 		{
-			js = random.nextInt(2) + 2;
-			jl = random.nextInt(3) + 2;
-			vDiff = random.nextInt(10) - 4;
+			boolean valid = false;
+			while(!valid)
+			{
+				js = random.nextInt(3) + 1;
+				jl = random.nextInt(6) + 1;
+				vDiff = random.nextInt(8) - 4;
+				hasStairs = random.nextInt(3) == 0;
+				
+				if(vDiff + jl > 2) valid = false;
+				else valid = true;
+			}
 			
 			length = js * 2 + jl;
 		}
@@ -748,12 +875,12 @@ public class MyLevel extends Level{
 			return length;
 		}
 		
-		public double fitness(int model)
+		public double fitness()
 		{
 			switch(model)
 			{
 			case PRECISION:
-				return vDiff + jl - js;
+				return jl - js - vDiff + (hasStairs ? 3 : 0);
 				
 			default:
 				
@@ -764,8 +891,6 @@ public class MyLevel extends Level{
 		
 		public int build(int xo, int maxLength) {
 			gaps++;
-		
-			boolean hasStairs = random.nextInt(3) == 0;
 		
 			int floor = height - 1 - random.nextInt(4);
 
