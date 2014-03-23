@@ -51,16 +51,25 @@ public class MyLevel extends Level{
 		// hardcoded for now
 		int model = PRECISION;
 		creat(seed, difficulty, type, model);
-		System.out.println(evaluate());
+		System.out.println(evaluate(model));
 	}
 	
 	//new methods
-	public int evaluate() {
-		int fitness = 0;
-		for (LevelSection section : levelSections) {
-			fitness += section.fitness;
+	public double evaluate(int model) {
+		switch (model) {
+			case PRECISION:
+				return evaluatePrecision();
+			default:
+				return 0;
 		}
-		return fitness;
+	}
+	
+	public double evaluatePrecision() {
+		double difficulty = 0;
+		for (LevelSection section : levelSections) {
+			difficulty += section.fitness;
+		}
+		return Math.abs(1 - difficulty / levelSections.size());
 	}
 	
 	private int buildAdvancedJump(int xo, int maxLength) {
@@ -74,11 +83,18 @@ public class MyLevel extends Level{
 		boolean hasStairs = random.nextInt(3) == 0;
 	
 		int floor = height - 1 - random.nextInt(4);
+		int vDiff = 0;
 		//run from the start x position, for the whole length
 		for (int x = xo; x < xo + length; x++)
 		{
 			if (x == xo + js) {
-				floor = floor + (random.nextInt(10) - 4);
+				vDiff = random.nextInt(10) - 4;
+				floor = floor + vDiff;
+				if (floor < 0) {
+					floor = 0;
+				} else if (floor > height - 1) {
+					floor = height - 1;
+				}
 			}
 			if (x < xo + js || x > xo + length - js - 1)
 			{
@@ -115,7 +131,7 @@ public class MyLevel extends Level{
 		LevelSection section = new LevelSection();
 		section.start = xo;
 		section.end = xo + length;
-		section.fitness = 1;
+		section.fitness = vDiff + jl - js;
 		levelSections.add(section);
 		return length;
 	}
@@ -768,9 +784,13 @@ public class MyLevel extends Level{
 //	}
 	
 	public class LevelSection {
-		public int fitness;
 		public int start;
 		public int end;
+		public int fitness;
 	}
+	
+//	public class PrecisionSection extends LevelSection {
+//		public int difficulty;
+//	}
 	//end new classes
 }
