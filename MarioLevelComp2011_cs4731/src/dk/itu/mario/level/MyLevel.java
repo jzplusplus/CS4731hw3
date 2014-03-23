@@ -27,6 +27,16 @@ public class MyLevel extends Level{
 	private int difficulty;
 	private int type;
 	private int gaps;
+	
+	//new vars
+//	public static final int RUNNER = 1;
+	public static final int PRECISION = 1;
+	public static final int COLLECTOR = 2;
+	public static final int KILLER = 3;
+	public static final int HARDCORE = 4;
+	public static final int JUMP_DIST = 0;
+	public static final int RUN_JUMP_DIST = 0;
+	//end new vars
 
 	public MyLevel(int width, int height)
 	{
@@ -37,11 +47,84 @@ public class MyLevel extends Level{
 	public MyLevel(int width, int height, long seed, int difficulty, int type, GamePlay playerMetrics)
 	{
 		this(width, height);
-		System.out.println("Aimless jumps" + playerMetrics.aimlessJumps);
-		creat(seed, difficulty, type);
+//		System.out.println("Aimless jumps" + playerMetrics.aimlessJumps);
+		// hardcoded for now
+		int model = PRECISION;
+		creat(seed, difficulty, type, model);
 	}
+	
+	//new methods
+	public int evaluate(LevelSection section, int model) {
+		switch (model) {
+			case 1:
+				return evaluatePrecision(section, model);
+			default:
+				return evaluatePrecision(section, model);
+		}
+	}
+	
+	public int evaluatePrecision(LevelSection section, int model) {
+		int fitness = 0;
+		for (int i = section.start; i <= section.end; i++) {
+			
+		}
+		return 0;
+	}
+	
+	private int buildAdvancedJump(int xo, int maxLength) {
+		gaps++;
+		//jl: jump length
+		//js: the number of blocks that are available at either side for free
+		int js = random.nextInt(2) + 2;
+		int jl = random.nextInt(3) + 2;
+		int length = js * 2 + jl;
+	
+		boolean hasStairs = random.nextInt(3) == 0;
+	
+		int floor = height - 1 - random.nextInt(4);
+		//run from the start x position, for the whole length
+		for (int x = xo; x < xo + length; x++)
+		{
+			if (x == xo + js) {
+				floor = floor + (random.nextInt(10) - 4);
+			}
+			if (x < xo + js || x > xo + length - js - 1)
+			{
+				//run for all y's since we need to paint blocks upward
+				for (int y = 0; y < height; y++)
+				{	//paint ground up until the floor
+					if (y >= floor)
+					{
+						setBlock(x, y, GROUND);
+					}
+					//if it is above ground, start making stairs of rocks
+					else if (hasStairs)
+					{	//LEFT SIDE
+						if (x < xo + js)
+						{ //we need to max it out and level because it wont
+							//paint ground correctly unless two bricks are side by side
+							if (y >= floor - (x - xo) + 1)
+							{
+								setBlock(x, y, ROCK);
+							}
+						}
+						else
+						{ //RIGHT SIDE
+							if (y >= floor - ((xo + length) - x) + 2)
+							{
+								setBlock(x, y, ROCK);
+							}
+						}
+					}
+				}
+			}
+		}
+	
+		return length;
+	}
+	//end new methods
 
-	public void creat(long seed, int difficulty, int type)
+	public void creat(long seed, int difficulty, int type, int model)
 	{
 		this.type = type;
 		this.difficulty = difficulty;
@@ -53,17 +136,37 @@ public class MyLevel extends Level{
 		int length = 0;
 		length += buildStraight(0, width, true);
 
-		//create all of the medium sections
-		while (length < width - 64)
-		{
-			//length += buildZone(length, width - length);
-			length += buildStraight(length, width-length, false);
-			length += buildStraight(length, width-length, false);
-			length += buildHillStraight(length, width-length);
-			length += buildJump(length, width-length);
-			length += buildTubes(length, width-length);
-			length += buildCannons(length, width-length);
+		//create all of the medium sections based on the provided model
+		switch (model) {
+			case PRECISION:
+				while (length < width - 64) {
+					length += buildAdvancedJump(length, width-length);
+				}
+				break;
+			default:
+				while (length < width - 64) {
+					length += buildStraight(length, width-length, false);
+					length += buildStraight(length, width-length, false);
+					length += buildHillStraight(length, width-length);
+					length += buildJump(length, width-length);
+					length += buildTubes(length, width-length);
+					length += buildCannons(length, width-length);
+				}
 		}
+		//create all of the medium sections
+//		while (length < width - 64)
+//		{
+//			//length += buildZone(length, width - length);
+//			length += buildStraight(length, width-length, false);
+//			length += buildStraight(length, width-length, false);
+//			length += buildHillStraight(length, width-length);
+//			length += buildJump(length, width-length);
+//			length += buildTubes(length, width-length);
+//			length += buildCannons(length, width-length);
+//			
+//			//test
+//			length += buildAdvancedJump(length, width-length);
+//		}
 
 		//set the end piece
 		int floor = height - 1 - random.nextInt(4);
@@ -651,7 +754,7 @@ public class MyLevel extends Level{
 
 	}
 
-	
+	//new classes
 	public abstract class LevelSection {
 		public int id;
 		
@@ -663,6 +766,8 @@ public class MyLevel extends Level{
 		public int powerups;
 		
 		public int length;
+		public int start;
+		public int end;
 	}
-
+	//end new classes
 }
