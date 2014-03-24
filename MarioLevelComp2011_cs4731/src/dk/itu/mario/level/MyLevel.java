@@ -793,7 +793,7 @@ public class MyLevel extends Level{
 	
 	public LevelSection randomSection(int maxLength)
 	{
-		int id = random.nextInt(4);
+		int id = random.nextInt(5);
 		//TODO add more sections options
 		switch(id) {
 		case 0:
@@ -804,6 +804,8 @@ public class MyLevel extends Level{
 			return new HillSection(maxLength);
 		case 3:
 			return new TubeSection(maxLength);
+		case 4:
+			return new CannonSection(maxLength);
 		default:
 			return null;
 		}
@@ -1260,6 +1262,90 @@ public class MyLevel extends Level{
 	}
 	
 	//cannons
+	public class CannonSection extends LevelSection{
+		
+		//jl: jump length
+		//js: the number of blocks that are available at either side for free
+		//vDiff: vertical difference across the gap
+		//hasStairs: a block in front of the jump makes it more difficult
+		private int id = STRAIGHT_SECTION;
+		private int vDiff;
+		private int jl;
+		private int js;
+		private boolean hasStairs;
+		
+		private int length;
+		
+		public CannonSection(int maxLength)
+		{
+			length = random.nextInt(10) + 2;
+			if (length > maxLength) length = maxLength;
+		}
+		
+		public int getId() {
+			return id;
+		}
+		
+		public int getLength()
+		{
+			return length;
+		}
+		
+		public double fitness()
+		{
+			switch(model)
+			{
+			case PRECISION:
+				return -length + 2;
+			default:
+				
+				break;
+			}
+			return 0.0;
+		}
+		
+		public int build(int xo, int maxLength) {
+			int floor = height - 1 - random.nextInt(4);
+			int xCannon = xo + 1 + random.nextInt(4);
+			for (int x = xo; x < xo + length; x++)
+			{
+				if (x > xCannon)
+				{
+					xCannon += 2 + random.nextInt(4);
+				}
+				if (xCannon == xo + length - 1) xCannon += 10;
+				int cannonHeight = floor - random.nextInt(4) - 1;
+
+				for (int y = 0; y < height; y++)
+				{
+					if (y >= floor)
+					{
+						setBlock(x, y, GROUND);
+					}
+					else
+					{
+						if (x == xCannon && y >= cannonHeight)
+						{
+							if (y == cannonHeight)
+							{
+								setBlock(x, y, (byte) (14 + 0 * 16));
+							}
+							else if (y == cannonHeight + 1)
+							{
+								setBlock(x, y, (byte) (14 + 1 * 16));
+							}
+							else
+							{
+								setBlock(x, y, (byte) (14 + 2 * 16));
+							}
+						}
+					}
+				}
+			}
+
+			return length;
+		}
+	}
 	
 //	public class PrecisionSection extends LevelSection {
 //		public int difficulty;
