@@ -59,7 +59,7 @@ public class MyLevel extends Level{
 		this(width, height);
 //		System.out.println("Aimless jumps" + playerMetrics.aimlessJumps);
 		// hardcoded for now
-		model = PRECISION;
+		model = decideModel();
 		
 		random = new Random(seed);
 		
@@ -70,22 +70,30 @@ public class MyLevel extends Level{
 	}
 	
 //	//new methods
-//	public double evaluate(int model) {
-//		switch (model) {
-//			case PRECISION:
-//				return evaluatePrecision();
-//			default:
-//				return 0;
-//		}
-//	}
-//	
-//	public double evaluatePrecision() {
-//		double difficulty = 0;
-//		for (LevelSection section : levelSections) {
-//			difficulty += section.fitness;
-//		}
-//		return Math.abs(1 - difficulty / levelSections.size());
-//	}
+	public int decideModel() {
+		GamePlay stats = GamePlay.read("player.txt");
+		double[] vals = {0, 0, 0, 0};
+		//precision
+		vals[0] = 1/(stats.aimlessJumps + 1);
+		//collector
+		vals[1] = ((double) stats.coinsCollected + 1)/(stats.totalCoins + 1);
+		//killer
+		vals[2] = ((double) stats.RedTurtlesKilled + stats.GreenTurtlesKilled + stats.ArmoredTurtlesKilled + stats.GoombasKilled + stats.CannonBallKilled + stats.JumpFlowersKilled + stats.ChompFlowersKilled + 1)/(stats.totalEnemies + 1);
+		//hardcore
+		vals[3] = (vals[0] + vals[1] + vals[2])/2;
+		
+		double temp = 0;
+		int ret = 0;
+		for (int i = 0; i < vals.length; i++) {
+			System.out.println(vals[i]);
+			if (vals[i] > temp) {
+				temp = vals[i];
+				ret = i + 1;
+			}
+		}
+		System.out.println(ret);
+		return ret;
+	}
 //	//end new methods
 
 	public void creat(long seed, int difficulty, int type)
@@ -745,7 +753,7 @@ public class MyLevel extends Level{
 		{
 			//Selection
 			Collections.sort(population);
-			System.out.println("Best level fitness = " + population.get(0).fitness);
+//			System.out.println("Best level fitness = " + population.get(0).fitness);
 			
 			population.subList(NUMBER_TO_KEEP, POPULATION_SIZE).clear();
 			
