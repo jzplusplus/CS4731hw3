@@ -882,7 +882,7 @@ public class MyLevel extends Level{
 			boolean valid = false;
 			while(!valid)
 			{
-				js = random.nextInt(3) + 1;
+				js = random.nextInt(2) + 2;
 				jl = random.nextInt(6) + 1;
 				vDiff = random.nextInt(8) - 3;
 				hasStairs = random.nextInt(3) == 0;
