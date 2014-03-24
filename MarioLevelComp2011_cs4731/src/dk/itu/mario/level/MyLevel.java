@@ -793,7 +793,7 @@ public class MyLevel extends Level{
 	
 	public LevelSection randomSection(int maxLength)
 	{
-		int id = random.nextInt(3);
+		int id = random.nextInt(4);
 		//TODO add more sections options
 		switch(id) {
 		case 0:
@@ -802,6 +802,8 @@ public class MyLevel extends Level{
 			return new StraightSection(maxLength, false);
 		case 2:
 			return new HillSection(maxLength);
+		case 3:
+			return new TubeSection(maxLength);
 		default:
 			return null;
 		}
@@ -1118,7 +1120,6 @@ public class MyLevel extends Level{
 				else
 				{
 					int l = random.nextInt(5) + 3;
-					System.out.println(length - l - 2);
 					int xxo = random.nextInt(length - l - 2) + xo + 1;
 
 					if (occupied[xxo - xo] || occupied[xxo - xo + l] || occupied[xxo - xo - 1] || occupied[xxo - xo + l + 1])
@@ -1163,6 +1164,102 @@ public class MyLevel extends Level{
 			return length;
 		}
 	}
+	
+	//tubes
+	public class TubeSection extends LevelSection{
+		
+		//jl: jump length
+		//js: the number of blocks that are available at either side for free
+		//vDiff: vertical difference across the gap
+		//hasStairs: a block in front of the jump makes it more difficult
+		private int id = STRAIGHT_SECTION;
+		private int vDiff;
+		private int jl;
+		private int js;
+		private boolean hasStairs;
+		
+		private int length;
+		
+		public TubeSection(int maxLength)
+		{
+			length = random.nextInt(10) + 5;
+			if (length > maxLength) length = maxLength;
+		}
+		
+		public int getId() {
+			return id;
+		}
+		
+		public int getLength()
+		{
+			return length;
+		}
+		
+		public double fitness()
+		{
+			switch(model)
+			{
+			case PRECISION:
+				return -length + 2;
+			default:
+				
+				break;
+			}
+			return 0.0;
+		}
+		
+		public int build(int xo, int maxLength) {
+			int floor = height - 1 - random.nextInt(4);
+			int xTube = xo + 1 + random.nextInt(4);
+			int tubeHeight = floor - random.nextInt(2) - 2;
+			for (int x = xo; x < xo + length; x++)
+			{
+				if (x > xTube + 1)
+				{
+					xTube += 3 + random.nextInt(4);
+					tubeHeight = floor - random.nextInt(2) - 2;
+				}
+				if (xTube >= xo + length - 2) xTube += 10;
+
+				if (x == xTube && random.nextInt(11) < difficulty + 1)
+				{
+					setSpriteTemplate(x, tubeHeight, new SpriteTemplate(Enemy.ENEMY_FLOWER, false));
+					ENEMIES++;
+				}
+
+				for (int y = 0; y < height; y++)
+				{
+					if (y >= floor)
+					{
+						setBlock(x, y,GROUND);
+
+					}
+					else
+					{
+						if ((x == xTube || x == xTube + 1) && y >= tubeHeight)
+						{
+							int xPic = 10 + x - xTube;
+
+							if (y == tubeHeight)
+							{
+								//tube top
+								setBlock(x, y, (byte) (xPic + 0 * 16));
+							}
+							else
+							{
+								//tube side
+								setBlock(x, y, (byte) (xPic + 1 * 16));
+							}
+						}
+					}
+				}
+			}
+			
+			return length;
+		}
+	}
+	
+	//cannons
 	
 //	public class PrecisionSection extends LevelSection {
 //		public int difficulty;
