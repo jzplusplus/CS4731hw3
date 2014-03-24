@@ -37,6 +37,13 @@ public class MyLevel extends Level{
 	public static final int COLLECTOR = 2;
 	public static final int KILLER = 3;
 	public static final int HARDCORE = 4;
+	
+	public static final int JUMP_SECTION = 1;
+	public static final int STRAIGHT_SECTION = 2;
+	public static final int HILL_STRAIGHT_SECTION = 3;
+	public static final int TUBES_SECTION = 4;
+	public static final int CANNONS_SECTION = 5;
+	
 	private LevelSectionList levelSections;
 	private int model;
 	//end new vars
@@ -786,8 +793,16 @@ public class MyLevel extends Level{
 	
 	public LevelSection randomSection()
 	{
+		int id = random.nextInt(2);
 		//TODO add more sections options
-		return new AdvancedJumpSection();
+		switch(id) {
+		case 0:
+			return new AdvancedJumpSection();
+		case 1:
+			return new StraightSection(64, false);
+		default:
+			return null;
+		}
 	}
 	
 	public class LevelSectionList implements Comparable<LevelSectionList>, Iterable<LevelSection>{
@@ -835,6 +850,7 @@ public class MyLevel extends Level{
 	}
 	
 	public abstract class LevelSection {
+		public abstract int getId();
 		public abstract int getLength();
 		public abstract double fitness();
 		public abstract int build(int xo, int maxLength);
@@ -846,6 +862,7 @@ public class MyLevel extends Level{
 		//js: the number of blocks that are available at either side for free
 		//vDiff: vertical difference across the gap
 		//hasStairs: a block in front of the jump makes it more difficult
+		private int id = JUMP_SECTION;
 		private int vDiff;
 		private int jl;
 		private int js;
@@ -868,6 +885,10 @@ public class MyLevel extends Level{
 			}
 			
 			length = js * 2 + jl;
+		}
+		
+		public int getId() {
+			return id;
 		}
 		
 		public int getLength()
@@ -934,6 +955,84 @@ public class MyLevel extends Level{
 							}
 						}
 					}
+				}
+			}
+			
+			return length;
+		}
+	}
+	
+	public class StraightSection extends LevelSection{
+		
+		//jl: jump length
+		//js: the number of blocks that are available at either side for free
+		//vDiff: vertical difference across the gap
+		//hasStairs: a block in front of the jump makes it more difficult
+		private int id = STRAIGHT_SECTION;
+		private int vDiff;
+		private int jl;
+		private int js;
+		private boolean hasStairs;
+		
+		private int length;
+		
+		public StraightSection(int maxLength, boolean safe)
+		{
+			length = random.nextInt(10) + 2;
+
+			if (safe)
+				length = 10 + random.nextInt(5);
+
+			if (length > maxLength)
+				length = maxLength;
+		}
+		
+		public int getId() {
+			return id;
+		}
+		
+		public int getLength()
+		{
+			return length;
+		}
+		
+		public double fitness()
+		{
+			switch(model)
+			{
+			case PRECISION:
+				return -length + 2;
+			default:
+				
+				break;
+			}
+			return 0.0;
+		}
+		
+		public int build(int xo, int maxLength) {
+			return build(xo, maxLength, false);
+		}
+		
+		public int build(int xo, int maxLength, boolean safe) {
+			int floor = height - 1 - random.nextInt(4);
+
+			//runs from the specified x position to the length of the segment
+			for (int x = xo; x < xo + length; x++)
+			{
+				for (int y = 0; y < height; y++)
+				{
+					if (y >= floor)
+					{
+						setBlock(x, y, GROUND);
+					}
+				}
+			}
+
+			if (!safe)
+			{
+				if (length > 5)
+				{
+					decorate(xo, xo + length, floor);
 				}
 			}
 			
