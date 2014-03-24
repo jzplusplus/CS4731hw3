@@ -735,7 +735,7 @@ public class MyLevel extends Level{
 			LevelSectionList level = new LevelSectionList();
 			while(level.length < width - 64)
 			{
-				LevelSection ls = randomSection();
+				LevelSection ls = randomSection(width-level.length);
 				level.add(ls);
 			}
 			population.add(level);
@@ -775,7 +775,7 @@ public class MyLevel extends Level{
 					}
 					else
 					{
-						ls = randomSection();
+						ls = randomSection(width-level.length);
 					}
 					
 					level.add(ls);
@@ -791,15 +791,17 @@ public class MyLevel extends Level{
 		return population.get(0);
 	}
 	
-	public LevelSection randomSection()
+	public LevelSection randomSection(int maxLength)
 	{
-		int id = random.nextInt(2);
+		int id = random.nextInt(3);
 		//TODO add more sections options
 		switch(id) {
 		case 0:
 			return new AdvancedJumpSection();
 		case 1:
-			return new StraightSection(64, false);
+			return new StraightSection(maxLength, false);
+		case 2:
+			return new HillSection(maxLength);
 		default:
 			return null;
 		}
@@ -856,6 +858,7 @@ public class MyLevel extends Level{
 		public abstract int build(int xo, int maxLength);
 	}
 	
+	//jump
 	public class AdvancedJumpSection extends LevelSection{
 		
 		//jl: jump length
@@ -877,7 +880,7 @@ public class MyLevel extends Level{
 			{
 				js = random.nextInt(3) + 1;
 				jl = random.nextInt(6) + 1;
-				vDiff = random.nextInt(8) - 4;
+				vDiff = random.nextInt(8) - 3;
 				hasStairs = random.nextInt(3) == 0;
 				
 				if(vDiff + jl > 2) valid = false;
@@ -962,6 +965,7 @@ public class MyLevel extends Level{
 		}
 	}
 	
+	//straight
 	public class StraightSection extends LevelSection{
 		
 		//jl: jump length
@@ -1040,6 +1044,125 @@ public class MyLevel extends Level{
 		}
 	}
 	
+	//hill
+	public class HillSection extends LevelSection{
+		
+		//jl: jump length
+		//js: the number of blocks that are available at either side for free
+		//vDiff: vertical difference across the gap
+		//hasStairs: a block in front of the jump makes it more difficult
+		private int id = STRAIGHT_SECTION;
+		private int vDiff;
+		private int jl;
+		private int js;
+		private boolean hasStairs;
+		
+		private int length;
+		
+		public HillSection(int maxLength)
+		{
+			length = random.nextInt(10) + 10;
+			if (length > maxLength) length = maxLength;
+		}
+		
+		public int getId() {
+			return id;
+		}
+		
+		public int getLength()
+		{
+			return length;
+		}
+		
+		public double fitness()
+		{
+			switch(model)
+			{
+			case PRECISION:
+				return -length + 2;
+			default:
+				
+				break;
+			}
+			return 0.0;
+		}
+		
+		public int build(int xo, int maxLength) {
+			int floor = height - 1 - random.nextInt(4);
+			for (int x = xo; x < xo + length; x++)
+			{
+				for (int y = 0; y < height; y++)
+				{
+					if (y >= floor)
+					{
+						setBlock(x, y, GROUND);
+					}
+				}
+			}
+
+			addEnemyLine(xo + 1, xo + length - 1, floor - 1);
+
+			int h = floor;
+
+			boolean keepGoing = true;
+
+			boolean[] occupied = new boolean[length];
+			while (keepGoing)
+			{
+				h = h - 2 - random.nextInt(3);
+
+				if (h <= 0)
+				{
+					keepGoing = false;
+				}
+				else
+				{
+					int l = random.nextInt(5) + 3;
+					System.out.println(length - l - 2);
+					int xxo = random.nextInt(length - l - 2) + xo + 1;
+
+					if (occupied[xxo - xo] || occupied[xxo - xo + l] || occupied[xxo - xo - 1] || occupied[xxo - xo + l + 1])
+					{
+						keepGoing = false;
+					}
+					else
+					{
+						occupied[xxo - xo] = true;
+						occupied[xxo - xo + l] = true;
+						addEnemyLine(xxo, xxo + l, h - 1);
+						if (random.nextInt(4) == 0)
+						{
+							decorate(xxo - 1, xxo + l + 1, h);
+							keepGoing = false;
+						}
+						for (int x = xxo; x < xxo + l; x++)
+						{
+							for (int y = h; y < floor; y++)
+							{
+								int xx = 5;
+								if (x == xxo) xx = 4;
+								if (x == xxo + l - 1) xx = 6;
+								int yy = 9;
+								if (y == h) yy = 8;
+
+								if (getBlock(x, y) == 0)
+								{
+									setBlock(x, y, (byte) (xx + yy * 16));
+								}
+								else
+								{
+									if (getBlock(x, y) == HILL_TOP_LEFT) setBlock(x, y, HILL_TOP_LEFT_IN);
+									if (getBlock(x, y) == HILL_TOP_RIGHT) setBlock(x, y, HILL_TOP_RIGHT_IN);
+								}
+							}
+						}
+					}
+				}
+			}
+
+			return length;
+		}
+	}
 	
 //	public class PrecisionSection extends LevelSection {
 //		public int difficulty;
