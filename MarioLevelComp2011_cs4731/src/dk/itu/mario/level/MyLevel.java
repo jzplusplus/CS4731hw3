@@ -33,10 +33,10 @@ public class MyLevel extends Level{
 	
 	//new vars
 //	public static final int RUNNER = 1;
-	public static final int PRECISION = 1;
-	public static final int COLLECTOR = 2;
-	public static final int KILLER = 3;
-	public static final int HARDCORE = 4;
+	public static final int PRECISION = 0;
+	public static final int COLLECTOR = 1;
+	public static final int KILLER = 2;
+	public static final int HARDCORE = 3;
 	
 	public static final int JUMP_SECTION = 1;
 	public static final int STRAIGHT_SECTION = 2;
@@ -59,7 +59,8 @@ public class MyLevel extends Level{
 		this(width, height);
 //		System.out.println("Aimless jumps" + playerMetrics.aimlessJumps);
 		// hardcoded for now
-		model = decideModel();
+		//model = decideModel();
+		model = COLLECTOR;
 		
 		random = new Random(seed);
 		
@@ -88,7 +89,7 @@ public class MyLevel extends Level{
 			System.out.println(vals[i]);
 			if (vals[i] > temp) {
 				temp = vals[i];
-				ret = i + 1;
+				ret = i;
 			}
 		}
 		System.out.println(ret);
@@ -753,7 +754,7 @@ public class MyLevel extends Level{
 		{
 			//Selection
 			Collections.sort(population);
-//			System.out.println("Best level fitness = " + population.get(0).fitness);
+			System.out.println("Best level fitness = " + population.get(0).fitness);
 			
 			population.subList(NUMBER_TO_KEEP, POPULATION_SIZE).clear();
 			
@@ -801,13 +802,13 @@ public class MyLevel extends Level{
 	
 	public LevelSection randomSection(int maxLength)
 	{
-		int id = random.nextInt(5);
+		int id = random.nextInt(2);
 		//TODO add more sections options
 		switch(id) {
 		case 0:
 			return new AdvancedJumpSection();
 		case 1:
-			return new StraightSection(maxLength, false);
+			return new StraightSection(maxLength);
 		case 2:
 			return new HillSection(maxLength);
 		case 3:
@@ -851,9 +852,12 @@ public class MyLevel extends Level{
 
 		@Override
 		public int compareTo(LevelSectionList o) {
-			final double TARGET_DIFFICULTY = 100;
-			if(Math.abs(o.fitness - TARGET_DIFFICULTY) < Math.abs(this.fitness - TARGET_DIFFICULTY)) return 1;
-			else if(Math.abs(this.fitness - TARGET_DIFFICULTY) < Math.abs(o.fitness - TARGET_DIFFICULTY)) return -1;
+										//PRECISION, COLLECTOR, KILLER, HARDCORE
+			final double[] MODEL_TARGETS = {100, 300, 100, 100};
+			
+			double target = MODEL_TARGETS[model];
+			if(Math.abs(o.fitness - target) < Math.abs(this.fitness - target)) return 1;
+			else if(Math.abs(this.fitness - target) < Math.abs(o.fitness - target)) return -1;
 			else return 0;
 		}
 
@@ -892,10 +896,10 @@ public class MyLevel extends Level{
 			{
 				js = random.nextInt(2) + 2;
 				jl = random.nextInt(6) + 1;
-				vDiff = random.nextInt(8) - 3;
+				vDiff = random.nextInt(9) - 4;
 				hasStairs = random.nextInt(3) == 0;
 				
-				if(vDiff + jl > 2) valid = false;
+				if(jl - vDiff > 8) valid = false;
 				else valid = true;
 			}
 			
@@ -918,6 +922,15 @@ public class MyLevel extends Level{
 			case PRECISION:
 				return jl - js - vDiff + (hasStairs ? 3 : 0);
 				
+			case COLLECTOR:
+				return 0;
+				
+			case KILLER:
+				return 0;
+				
+			case HARDCORE:
+				return jl - js - vDiff + (hasStairs ? 3 : 0);
+				
 			default:
 				
 				break;
@@ -928,7 +941,7 @@ public class MyLevel extends Level{
 		public int build(int xo, int maxLength) {
 			gaps++;
 		
-			int floor = height - 1 - random.nextInt(4);
+			int floor = height - 1 - random.nextInt(5);
 
 			//run from the start x position, for the whole length
 			for (int x = xo; x < xo + length; x++)
@@ -980,24 +993,25 @@ public class MyLevel extends Level{
 	//straight
 	public class StraightSection extends LevelSection{
 		
-		//jl: jump length
-		//js: the number of blocks that are available at either side for free
-		//vDiff: vertical difference across the gap
-		//hasStairs: a block in front of the jump makes it more difficult
 		private int id = STRAIGHT_SECTION;
-		private int vDiff;
-		private int jl;
-		private int js;
-		private boolean hasStairs;
 		
 		private int length;
+		private int enemies;
+		private int coins;
 		
-		public StraightSection(int maxLength, boolean safe)
+		public StraightSection(int maxLength)
 		{
 			length = random.nextInt(10) + 2;
-
-			if (safe)
-				length = 10 + random.nextInt(5);
+			
+			enemies = random.nextInt(4);
+			//only 1/4 chance of being 3 or more enemies
+			if(enemies == 3) enemies = 3 + random.nextInt(3);
+			
+			if(random.nextBoolean())
+			{
+				coins = random.nextInt(6) + 1;
+			}
+			else coins = 0;
 
 			if (length > maxLength)
 				length = maxLength;
@@ -1018,18 +1032,22 @@ public class MyLevel extends Level{
 			{
 			case PRECISION:
 				return -length + 2;
-			default:
 				
-				break;
+			case COLLECTOR:
+				return coins - (enemies/2);
+				
+			case KILLER:
+				return enemies - (coins/2);
+				
+			case HARDCORE:
+				return coins + enemies;
+			
+			default:
+				return 0.0;
 			}
-			return 0.0;
 		}
 		
 		public int build(int xo, int maxLength) {
-			return build(xo, maxLength, false);
-		}
-		
-		public int build(int xo, int maxLength, boolean safe) {
 			int floor = height - 1 - random.nextInt(4);
 
 			//runs from the specified x position to the length of the segment
@@ -1044,12 +1062,10 @@ public class MyLevel extends Level{
 				}
 			}
 
-			if (!safe)
+			if (length > 5)
 			{
-				if (length > 5)
-				{
-					decorate(xo, xo + length, floor);
-				}
+				if(enemies > 0) addEnemies(xo, xo+length, floor, enemies);
+				if(coins > 0) addCoins(xo, xo+length, floor, coins);
 			}
 			
 			return length;
@@ -1059,21 +1075,26 @@ public class MyLevel extends Level{
 	//hill
 	public class HillSection extends LevelSection{
 		
-		//jl: jump length
-		//js: the number of blocks that are available at either side for free
-		//vDiff: vertical difference across the gap
-		//hasStairs: a block in front of the jump makes it more difficult
-		private int id = STRAIGHT_SECTION;
-		private int vDiff;
-		private int jl;
-		private int js;
-		private boolean hasStairs;
+		private int id = HILL_STRAIGHT_SECTION;
 		
 		private int length;
+		private int enemies;
+		private int coins;
 		
 		public HillSection(int maxLength)
 		{
 			length = random.nextInt(10) + 10;
+			
+			enemies = random.nextInt(4);
+			//only 1/4 chance of being 3 or more enemies
+			if(enemies == 3) enemies = 3 + random.nextInt(3);
+			
+			if(random.nextBoolean())
+			{
+				coins = random.nextInt(6) + 1;
+			}
+			else coins = 0;
+			
 			if (length > maxLength) length = maxLength;
 		}
 		
@@ -1092,11 +1113,19 @@ public class MyLevel extends Level{
 			{
 			case PRECISION:
 				return -length + 2;
-			default:
 				
-				break;
+			case COLLECTOR:
+				return coins;
+				
+			case KILLER:
+				return enemies;
+				
+			case HARDCORE:
+				return coins + enemies;
+			
+			default:
+				return 0.0;
 			}
-			return 0.0;
 		}
 		
 		public int build(int xo, int maxLength) {
@@ -1178,15 +1207,7 @@ public class MyLevel extends Level{
 	//tubes
 	public class TubeSection extends LevelSection{
 		
-		//jl: jump length
-		//js: the number of blocks that are available at either side for free
-		//vDiff: vertical difference across the gap
-		//hasStairs: a block in front of the jump makes it more difficult
-		private int id = STRAIGHT_SECTION;
-		private int vDiff;
-		private int jl;
-		private int js;
-		private boolean hasStairs;
+		private int id = TUBES_SECTION;
 		
 		private int length;
 		
@@ -1272,15 +1293,7 @@ public class MyLevel extends Level{
 	//cannons
 	public class CannonSection extends LevelSection{
 		
-		//jl: jump length
-		//js: the number of blocks that are available at either side for free
-		//vDiff: vertical difference across the gap
-		//hasStairs: a block in front of the jump makes it more difficult
-		private int id = STRAIGHT_SECTION;
-		private int vDiff;
-		private int jl;
-		private int js;
-		private boolean hasStairs;
+		private int id = CANNONS_SECTION;
 		
 		private int length;
 		
@@ -1352,6 +1365,43 @@ public class MyLevel extends Level{
 			}
 
 			return length;
+		}
+	}
+	
+	private void addEnemies(int startX, int endX, int y, int number)
+	{
+		if (y - 1 <= 0) return;
+		
+		for (int i=0; i < number; i++)
+		{
+			int x = random.nextInt(endX - startX) + startX;
+			while(getSpriteTemplate(x, y-1) != null)
+			{
+				x = random.nextInt(endX - startX) + startX;
+			}
+				
+			int type = random.nextInt(4);
+			boolean winged = random.nextInt(30) < 2;
+
+			setSpriteTemplate(x, y-1, new SpriteTemplate(type, winged));
+			ENEMIES++;
+		}
+	}
+	
+	private void addCoins(int startX, int endX, int y, int number)
+	{
+		if (y - 2 <= 0) return;
+		
+		for (int i=0; i < number; i++)
+		{
+			int x = random.nextInt(endX - startX) + startX;
+			while(this.getBlock(x, y - 2) == COIN)
+			{
+				x = random.nextInt(endX - startX) + startX;
+			}
+				
+			setBlock(x, y - 2, COIN);
+			COINS++;
 		}
 	}
 	
