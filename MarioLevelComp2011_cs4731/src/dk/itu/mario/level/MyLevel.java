@@ -19,6 +19,7 @@ public class MyLevel extends Level{
 	public   int BLOCKS_COINS = 0; // the number of coin blocks
 	public   int BLOCKS_POWER = 0; // the number of power blocks
 	public   int COINS = 0; //These are the coins in boxes that Mario collect
+	public   int CANNONS = 0; //the number of cannons
 
 
 	private static Random levelSeedRandom = new Random();
@@ -60,7 +61,7 @@ public class MyLevel extends Level{
 //		System.out.println("Aimless jumps" + playerMetrics.aimlessJumps);
 		// hardcoded for now
 		//model = decideModel();
-		model = COLLECTOR;
+		model = PRECISION;
 		
 		random = new Random(seed);
 		
@@ -802,7 +803,7 @@ public class MyLevel extends Level{
 	
 	public LevelSection randomSection(int maxLength)
 	{
-		int id = random.nextInt(2);
+		int id = random.nextInt(3);
 		//TODO add more sections options
 		switch(id) {
 		case 0:
@@ -810,11 +811,11 @@ public class MyLevel extends Level{
 		case 1:
 			return new StraightSection(maxLength);
 		case 2:
-			return new HillSection(maxLength);
+			return new CannonSection(maxLength);
 		case 3:
 			return new TubeSection(maxLength);
 		case 4:
-			return new CannonSection(maxLength);
+			return new HillSection(maxLength);
 		default:
 			return null;
 		}
@@ -1296,11 +1297,20 @@ public class MyLevel extends Level{
 		private int id = CANNONS_SECTION;
 		
 		private int length;
+		private boolean[] cannonLocations;
 		
 		public CannonSection(int maxLength)
 		{
 			length = random.nextInt(10) + 2;
 			if (length > maxLength) length = maxLength;
+			
+			cannonLocations = new boolean[length];
+			for (int i = 0; i < length; i++) {
+				if (random.nextInt(4) == 0) { // 1/4 chance of cannons
+					cannonLocations[i] = true;
+					CANNONS++;
+				}
+			}
 		}
 		
 		public int getId() {
@@ -1327,38 +1337,29 @@ public class MyLevel extends Level{
 		
 		public int build(int xo, int maxLength) {
 			int floor = height - 1 - random.nextInt(4);
-			int xCannon = xo + 1 + random.nextInt(4);
-			for (int x = xo; x < xo + length; x++)
+			for (int i = 0; i < length; i++)
 			{
-				if (x > xCannon)
-				{
-					xCannon += 2 + random.nextInt(4);
-				}
-				if (xCannon == xo + length - 1) xCannon += 10;
 				int cannonHeight = floor - random.nextInt(4) - 1;
 
 				for (int y = 0; y < height; y++)
 				{
 					if (y >= floor)
 					{
-						setBlock(x, y, GROUND);
+						setBlock(xo + i, y, GROUND);
 					}
-					else
+					else if (y >= cannonHeight && cannonLocations[i])
 					{
-						if (x == xCannon && y >= cannonHeight)
+						if (y == cannonHeight)
 						{
-							if (y == cannonHeight)
-							{
-								setBlock(x, y, (byte) (14 + 0 * 16));
-							}
-							else if (y == cannonHeight + 1)
-							{
-								setBlock(x, y, (byte) (14 + 1 * 16));
-							}
-							else
-							{
-								setBlock(x, y, (byte) (14 + 2 * 16));
-							}
+							setBlock(xo + i, y, (byte) (14 + 0 * 16));
+						}
+						else if (y == cannonHeight + 1)
+						{
+							setBlock(xo + i, y, (byte) (14 + 1 * 16));
+						}
+						else
+						{
+							setBlock(xo + i, y, (byte) (14 + 2 * 16));
 						}
 					}
 				}
