@@ -61,7 +61,7 @@ public class MyLevel extends Level{
 //		System.out.println("Aimless jumps" + playerMetrics.aimlessJumps);
 		// hardcoded for now
 		//model = decideModel();
-		model = PRECISION;
+		model = KILLER;
 		
 		random = new Random(seed);
 		
@@ -733,9 +733,9 @@ public class MyLevel extends Level{
 	
 	public LevelSectionList generateSections(int width)
 	{
-		final int POPULATION_SIZE = 50;
-		final int GENERATIONS = 50;
-		final int NUMBER_TO_KEEP = 10;
+		final int POPULATION_SIZE = 100;
+		final int GENERATIONS = 100;
+		final int NUMBER_TO_KEEP = 25;
 		
 		//Initial population
 		ArrayList<LevelSectionList> population = new ArrayList<LevelSectionList>();
@@ -812,10 +812,10 @@ public class MyLevel extends Level{
 			return new StraightSection(maxLength);
 		case 2:
 			return new CannonSection(maxLength);
-		case 3:
-			return new TubeSection(maxLength);
-		case 4:
-			return new HillSection(maxLength);
+//		case 3:
+//			return new TubeSection(maxLength);
+//		case 4:
+//			return new HillSection(maxLength);
 		default:
 			return null;
 		}
@@ -854,7 +854,7 @@ public class MyLevel extends Level{
 		@Override
 		public int compareTo(LevelSectionList o) {
 										//PRECISION, COLLECTOR, KILLER, HARDCORE
-			final double[] MODEL_TARGETS = {100, 300, 100, 100};
+			final double[] MODEL_TARGETS = {100, 300, 50, 500};
 			
 			double target = MODEL_TARGETS[model];
 			if(Math.abs(o.fitness - target) < Math.abs(this.fitness - target)) return 1;
@@ -900,7 +900,7 @@ public class MyLevel extends Level{
 				vDiff = random.nextInt(9) - 4;
 				hasStairs = random.nextInt(3) == 0;
 				
-				if(jl - vDiff > 8) valid = false;
+				if(jl - vDiff > 6) valid = false;
 				else valid = true;
 			}
 			
@@ -1035,7 +1035,7 @@ public class MyLevel extends Level{
 				return -length + 2;
 				
 			case COLLECTOR:
-				return coins - (enemies/2);
+				return coins - enemies;
 				
 			case KILLER:
 				return enemies - (coins/2);
@@ -1307,7 +1307,7 @@ public class MyLevel extends Level{
 			
 			cannonLocations = new boolean[length];
 			for (int i = 0; i < length; i++) {
-				if (random.nextInt(4) == 0) { // 1/4 chance of cannons
+				if (random.nextInt(8) == 0) { // 1/8 chance of cannons
 					cannonLocations[i] = true;
 					cannons++;
 				}
@@ -1328,12 +1328,20 @@ public class MyLevel extends Level{
 			switch(model)
 			{
 			case PRECISION:
-				return -length + 2;
-			default:
+				return 0;
 				
-				break;
+			case COLLECTOR:
+				return 0;
+				
+			case KILLER:
+				return cannons;
+				
+			case HARDCORE:
+				return cannons;
+			
+			default:
+				return 0.0;
 			}
-			return 0.0;
 		}
 		
 		public int build(int xo, int maxLength) {
