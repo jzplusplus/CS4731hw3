@@ -59,7 +59,7 @@ public class MyLevel extends Level{
 //		System.out.println("Aimless jumps" + playerMetrics.aimlessJumps);
 		// hardcoded for now
 		//model = decideModel();
-		model = COLLECTOR;
+		model = decideModel(playerMetrics);
 		
 		random = new Random(seed);
 		
@@ -70,15 +70,14 @@ public class MyLevel extends Level{
 	}
 	
 //	//new methods
-	public int decideModel() {
-		GamePlay stats = GamePlay.read("player.txt");
+	public int decideModel(GamePlay playerMetrics) {
 		double[] vals = {0, 0, 0, 0};
 		//precision
-		vals[0] = 1/(stats.aimlessJumps + 1);
+		vals[0] = 1/(playerMetrics.aimlessJumps + 1);
 		//collector
-		vals[1] = ((double) stats.coinsCollected + 1)/(stats.totalCoins + 1);
+		vals[1] = ((double) playerMetrics.coinsCollected + 1)/(playerMetrics.totalCoins + 1);
 		//killer
-		vals[2] = ((double) stats.RedTurtlesKilled + stats.GreenTurtlesKilled + stats.ArmoredTurtlesKilled + stats.GoombasKilled + stats.CannonBallKilled + stats.JumpFlowersKilled + stats.ChompFlowersKilled + 1)/(stats.totalEnemies + 1);
+		vals[2] = ((double) playerMetrics.RedTurtlesKilled + playerMetrics.GreenTurtlesKilled + playerMetrics.ArmoredTurtlesKilled + playerMetrics.GoombasKilled + playerMetrics.CannonBallKilled + playerMetrics.JumpFlowersKilled + playerMetrics.ChompFlowersKilled + 1)/(playerMetrics.totalEnemies + 1);
 		//hardcore
 		vals[3] = (vals[0] + vals[1] + vals[2])/2;
 		
