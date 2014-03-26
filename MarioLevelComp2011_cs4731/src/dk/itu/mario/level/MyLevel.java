@@ -1298,6 +1298,7 @@ public class MyLevel extends Level{
 		
 		private int length;
 		private boolean[] cannonLocations;
+		private int cannons;
 		
 		public CannonSection(int maxLength)
 		{
@@ -1308,7 +1309,7 @@ public class MyLevel extends Level{
 			for (int i = 0; i < length; i++) {
 				if (random.nextInt(4) == 0) { // 1/4 chance of cannons
 					cannonLocations[i] = true;
-					CANNONS++;
+					cannons++;
 				}
 			}
 		}
