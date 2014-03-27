@@ -72,14 +72,14 @@ public class MyLevel extends Level{
 //	//new methods
 	public int decideModel(GamePlay playerMetrics) {
 		double[] vals = {0, 0, 0, 0};
-		//precision
-		vals[0] = 1/(playerMetrics.aimlessJumps + 1);
 		//collector
 		vals[1] = ((double) playerMetrics.coinsCollected + 1)/(playerMetrics.totalCoins + 1);
 		//killer
 		vals[2] = ((double) playerMetrics.RedTurtlesKilled + playerMetrics.GreenTurtlesKilled + playerMetrics.ArmoredTurtlesKilled + playerMetrics.GoombasKilled + playerMetrics.CannonBallKilled + playerMetrics.JumpFlowersKilled + playerMetrics.ChompFlowersKilled + 1)/(playerMetrics.totalEnemies + 1);
+		//precision
+		vals[0] = 1 - (vals[1] + vals[2])/2;
 		//hardcore
-		vals[3] = (vals[0] + vals[1] + vals[2])/2;
+		vals[3] = (vals[1] + vals[2])/1.5;
 		
 		double temp = 0;
 		int ret = 0;
@@ -716,7 +716,7 @@ public class MyLevel extends Level{
 			switch(model)
 			{
 			case PRECISION:
-				return -length + 2;
+				return 0.0;
 				
 			case COLLECTOR:
 				return coins - enemies;
@@ -797,7 +797,7 @@ public class MyLevel extends Level{
 			switch(model)
 			{
 			case PRECISION:
-				return -length/2 + 2;
+				return 0.0;
 				
 			case COLLECTOR:
 				return coins;
@@ -997,7 +997,7 @@ public class MyLevel extends Level{
 			if (length > maxLength) length = maxLength;
 			
 			cannonLocations = new boolean[length];
-			for (int i = 0; i < length; i++) {
+			for (int i = 1; i < length; i++) {
 				if (random.nextInt(8) == 0) { // 1/8 chance of cannons
 					cannonLocations[i] = true;
 					cannons++;
