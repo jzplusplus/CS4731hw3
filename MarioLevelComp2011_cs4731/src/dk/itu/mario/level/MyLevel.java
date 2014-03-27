@@ -58,7 +58,7 @@ public class MyLevel extends Level{
 		this(width, height);
 //		System.out.println("Aimless jumps" + playerMetrics.aimlessJumps);
 		// hardcoded for now
-		//model = decideModel();
+//		model = PRECISION;
 		model = decideModel(playerMetrics);
 		
 		random = new Random(seed);
@@ -421,7 +421,7 @@ public class MyLevel extends Level{
 		{
 			//Selection
 			Collections.sort(population);
-			System.out.println("Best level fitness = " + population.get(0).fitness);
+//			System.out.println("Best level fitness = " + population.get(0).fitness);
 			
 			population.subList(NUMBER_TO_KEEP, POPULATION_SIZE).clear();
 			
@@ -605,7 +605,7 @@ public class MyLevel extends Level{
 			switch(model)
 			{
 			case PRECISION:
-				return 2 * (jl - js - vDiff + (hasStairs ? 3 : 0));
+				return (jl - js - vDiff + (hasStairs ? 3 : 0));
 				
 			case COLLECTOR:
 				return 0;
@@ -614,7 +614,7 @@ public class MyLevel extends Level{
 				return 0;
 				
 			case HARDCORE:
-				return 2 * (jl - js - vDiff + (hasStairs ? 3 : 0));
+				return 1.25 * (jl - js - vDiff + (hasStairs ? 3 : 0));
 				
 			default:
 				
